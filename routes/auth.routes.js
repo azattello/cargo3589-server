@@ -1,5 +1,6 @@
 const Router = require("express");
 const User = require("../models/User") 
+const Filial = require("../models/Filial") 
 // const bcrypt = require("bcryptjs")
 const config = require("config")
 const jwt = require("jsonwebtoken")
@@ -37,11 +38,17 @@ router.post('/registration',
             return res.status(400).json({ message: 'Пользователь с таким номером телефона уже существует' });
         }
 
+        // Ищем филиал по `selectedFilial`
+        const filial = await Filial.findOne({ filialText: selectedFilial });
+        if (!filial) {
+            return res.status(400).json({ message: 'Филиал не найден' });
+        }
+
         // Получаем количество пользователей в коллекции User
         const userCount = await User.countDocuments();
 
-        // Присваиваем новый личный идентификатор, равный количеству пользователей + 1
-        const personalId = userCount + 1;
+        // Формируем новый личный идентификатор с филиалом
+        const personalId = `${filial.filialId}-${userCount + 1}`;
 
         // Создание нового пользователя
         const user = new User({
@@ -214,6 +221,39 @@ router.get('/profile', async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
+// Роут для получения филиала пользователя
+router.get('/user-filial/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Находим пользователя по ID
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Пользователь не найден' });
+        }
+
+        // Проверяем, указал ли пользователь филиал
+        if (!user.selectedFilial) {
+            return res.status(404).json({ message: 'Филиал пользователя не выбран' });
+        }
+
+        // Находим филиал по тексту selectedFilial
+        const filial = await Filial.findOne({ filialText: user.selectedFilial });
+        if (!filial) {
+            return res.status(404).json({ message: 'Филиал не найден' });
+        }
+
+        console.log(filial)
+        // Возвращаем данные филиала
+        return res.status(200).json({ filial });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
 

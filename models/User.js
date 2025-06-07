@@ -43,7 +43,7 @@ const UserSchema = new Schema({
     referrer: { type: Schema.Types.ObjectId, ref: 'User', required: false }, // Кто пригласил
     bonuses: { type: Number, required: false },  // Накопленные бонусы
     referralBonusPercentage: { type: Number, default: null },  // %
-    personalId: {type: Number, default: null},
+    personalId: {type: String, required: true},
     personalRate: { type: String, required: false } // Новое поле для личного тарифа пользователя
 });
 
